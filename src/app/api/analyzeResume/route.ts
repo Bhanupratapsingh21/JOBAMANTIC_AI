@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import PdfParse from "pdf-parse";
 
-// Configure Cloudinary (moved outside function for better performance)
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Initialize OpenAI once (better performance)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
 });
 
 interface StructuredFeedback {
@@ -46,7 +46,7 @@ function parseAIFeedbackToStructured(feedbackText: string): StructuredFeedback {
     const sections: Record<string, string> = {};
     let overallScore = 50;
 
-    // Extract overall score with pre-compiled regex
+    // Extract overall score
     const scoreMatch = feedbackText.match(SCORE_REGEX);
     if (scoreMatch) {
       overallScore = Math.min(100, Math.max(0, parseInt(scoreMatch[1])));
@@ -62,13 +62,11 @@ function parseAIFeedbackToStructured(feedbackText: string): StructuredFeedback {
 
     for (const line of lines) {
       const trimmedLine = line.trim();
-      if (!trimmedLine) continue; // Skip empty lines
+      if (!trimmedLine) continue;
 
-      // Detect section headers with pre-compiled regex
       if (SECTION_HEADER_REGEX.test(trimmedLine)) {
         const sectionMatch = trimmedLine.toLowerCase();
 
-        // Use switch for better performance with multiple conditions
         if (sectionMatch.includes('ats') || sectionMatch.includes('compatibility')) {
           currentSection = 'ats';
         } else if (sectionMatch.includes('tone') || sectionMatch.includes('style')) {
@@ -91,7 +89,6 @@ function parseAIFeedbackToStructured(feedbackText: string): StructuredFeedback {
       }
     }
 
-    // Helper function to get section content safely
     const getSectionContent = (section: string, defaultValue: string) =>
       sections[section]?.substring(0, 1000) || defaultValue;
 
@@ -109,7 +106,6 @@ function parseAIFeedbackToStructured(feedbackText: string): StructuredFeedback {
   }
 }
 
-// Helper function for text extraction fallback
 function extractTextFallback(buffer: Buffer): string {
   try {
     const bufferString = buffer.toString('binary');
@@ -126,19 +122,18 @@ function extractTextFallback(buffer: Buffer): string {
         .join(' ');
     }
 
-    return "Text extraction limited. This PDF may be image-based or encrypted. Please ensure your PDF contains selectable text.";
+    return "Text extraction limited. This PDF may be image-based or encrypted.";
   } catch (error) {
     console.error("Fallback extraction failed:", error);
-    return "Unable to extract text from this PDF. The file may be corrupted, encrypted, or image-based.";
+    return "Unable to extract text from this PDF.";
   }
 }
 
-// Helper function for Cloudinary upload - returns both PDF and image URLs
 async function uploadToCloudinary(buffer: Buffer): Promise<{ pdfUrl: string, imageUrl: string }> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        resource_type: "auto", // Let Cloudinary detect it's a PDF
+        resource_type: "auto",
         folder: "resumes",
         public_id: `resume_${Date.now()}`,
         access_mode: "public",
@@ -147,18 +142,17 @@ async function uploadToCloudinary(buffer: Buffer): Promise<{ pdfUrl: string, ima
         if (error) {
           reject(error);
         } else if (result && result.secure_url && result.public_id) {
-          // Generate image preview URL from the PDF
           const imageUrl = cloudinary.url(result.public_id, {
             format: 'png',
-            page: 1, // First page of PDF
+            page: 1,
             height: 800,
             quality: 'auto',
-            flags: 'attachment' // Optional: can remove this for cleaner preview
+            flags: 'attachment'
           });
 
           resolve({
-            pdfUrl: result.secure_url, // Original PDF URL
-            imageUrl: imageUrl // Image preview URL
+            pdfUrl: result.secure_url,
+            imageUrl: imageUrl
           });
         } else {
           reject(new Error("Cloudinary upload failed: No result returned"));
@@ -170,7 +164,7 @@ async function uploadToCloudinary(buffer: Buffer): Promise<{ pdfUrl: string, ima
 }
 
 export async function POST(req: NextRequest) {
-  const startTime = Date.now(); // Performance tracking
+  const startTime = Date.now();
 
   try {
     const formData = await req.formData();
@@ -179,7 +173,7 @@ export async function POST(req: NextRequest) {
     const jobDescription = formData.get("jobDescription") as string;
     const companyName = formData.get("companyName") as string;
 
-    // Validate inputs - optimized validation order
+    // Validate inputs
     if (!file) {
       return NextResponse.json({
         success: false,
@@ -203,19 +197,16 @@ export async function POST(req: NextRequest) {
 
     console.log("Processing file:", file.name, "Size:", file.size, "bytes");
 
-    // Convert File to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
     let cloudinaryUrl = "";
     let extractedText = "";
     let imageUrl = "";
-    // ✅ STEP 1: Extract text and upload to Cloudinary in optimized way
+
+    // Extract text and upload to Cloudinary
     try {
-      // Try pdf-parse first (most reliable)
       const pdfData = await PdfParse(buffer);
       extractedText = pdfData.text;
-      console.log("✅ Text extracted via pdf-parse. Length:", extractedText.length, "Pages:", pdfData.numpages);
-
-      // Upload to Cloudinary (non-blocking for text extraction)
+      console.log("✅ Text extracted. Length:", extractedText.length, "Pages:", pdfData.numpages);
 
       const cloudinaryPromise = uploadToCloudinary(buffer)
         .then(url => {
@@ -224,30 +215,25 @@ export async function POST(req: NextRequest) {
           console.log("✅ File uploaded to Cloudinary");
         })
         .catch(error => {
-          console.error("⚠️ Cloudinary upload failed (non-critical):", error.message);
-          // Don't fail the entire request if Cloudinary fails
+          console.error("⚠️ Cloudinary upload failed:", error.message);
         });
 
-      // Wait for Cloudinary upload but don't block on failure
       await cloudinaryPromise;
 
     } catch (parseError) {
-      console.error("❌ PDF parsing failed, using fallback:", parseError);
+      console.error("❌ PDF parsing failed:", parseError);
       extractedText = extractTextFallback(buffer);
     }
 
-    // Validate we have enough text for analysis
     if (!extractedText || extractedText.trim().length < 50) {
       console.warn("⚠️ Insufficient text extracted:", extractedText?.length);
-      // Continue anyway but note the limitation
     }
 
     console.log("📊 Final extracted text length:", extractedText.length);
 
-    // ✅ STEP 2: Generate AI Analysis with optimized prompt
+    // Generate AI Analysis with Claude Sonnet
     let feedbackText = "";
     try {
-      // Optimize prompt - only send necessary content
       const truncatedText = extractedText.length > 12000
         ? extractedText.substring(0, 12000) + "... [content truncated]"
         : extractedText;
@@ -269,39 +255,40 @@ Provide structured feedback in these categories with a score (0-100):
 
 Be specific and actionable.`;
 
-      const aiResponse = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo", // Consider gpt-4 for better analysis if available
+      // Claude API call - uses messages format
+      const message = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022", // Latest Sonnet model
+        max_tokens: 2000,
+        temperature: 0.2,
+        system: "You are an expert ATS consultant. Provide structured, actionable feedback. Always include an overall score (0-100) and detailed analysis.",
         messages: [
-          {
-            role: "system",
-            content: `You are an expert ATS consultant. Provide structured, actionable feedback. Always include an overall score (0-100) and detailed analysis.`
-          },
           {
             role: "user",
             content: analysisPrompt
           }
-        ],
-        max_tokens: 2000, // Reduced for cost optimization
-        temperature: 0.2
+        ]
       });
 
-      feedbackText = aiResponse.choices[0]?.message?.content || "No feedback could be generated.";
+      // Extract text from Claude's response
+      feedbackText = message.content[0].type === 'text'
+        ? message.content[0].text
+        : "No feedback could be generated.";
+
       console.log("✅ AI analysis completed");
 
     } catch (aiError: any) {
-      console.error("❌ OpenAI API error:", aiError.message);
+      console.error("❌ Claude API error:", aiError.message);
       feedbackText = "AI analysis is temporarily unavailable. Please try again later.";
     }
 
-    // ✅ STEP 3: Parse AI feedback
+    // Parse AI feedback
     const structuredFeedback = parseAIFeedbackToStructured(feedbackText);
     console.log("✅ Feedback parsed. Overall score:", structuredFeedback.overallScore);
 
-    // Performance logging
     const processingTime = Date.now() - startTime;
     console.log(`⏱️ Total processing time: ${processingTime}ms`);
 
-    // ✅ STEP 4: Return successful response
+    // Return successful response
     return NextResponse.json({
       success: true,
       cloudinaryUrl,
@@ -316,7 +303,6 @@ Be specific and actionable.`;
   } catch (err: any) {
     console.error("❌ API Error:", err);
 
-    // More specific error handling
     const errorMessage = err.message?.includes('timeout')
       ? "Request timeout. Please try a smaller file."
       : "Analysis failed. Please try again.";
@@ -332,11 +318,10 @@ Be specific and actionable.`;
   }
 }
 
-// Health check with better diagnostics
 export async function GET() {
   const envVars = {
     cloudinary: !!process.env.CLOUDINARY_CLOUD_NAME,
-    openai: !!process.env.OPENAI_API_KEY
+    anthropic: !!process.env.ANTHROPIC_API_KEY
   };
 
   return NextResponse.json({
