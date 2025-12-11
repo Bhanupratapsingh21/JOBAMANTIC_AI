@@ -6,12 +6,14 @@ import { database } from "@/lib/appwrite";
 import { Query } from "appwrite";
 import { useUserStore } from "@/store/userStore";
 import { motion } from "framer-motion";
-import { 
-  Star, 
-  TrendingUp, 
-  FileText, 
-  Layout, 
-  Code, 
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import {
+  Star,
+  TrendingUp,
+  FileText,
+  Layout,
+  Code,
   MessageSquare,
   ArrowLeft,
   RefreshCw,
@@ -84,9 +86,9 @@ export default function ResultPage() {
       setError(null);
       setPdfError(null);
 
-        const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID! || "";
-            const RESUMES_COLLECTION_ID = process.env.NEXT_PUBLIC_RESUME_COLLECTION_ID! || "";
-            const FEEDBACK_COLLECTION_ID = process.env.NEXT_PUBLIC_FEEDBACK_COLLECTION_ID! || "";
+      const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID! || "";
+      const RESUMES_COLLECTION_ID = process.env.NEXT_PUBLIC_RESUME_COLLECTION_ID! || "";
+      const FEEDBACK_COLLECTION_ID = process.env.NEXT_PUBLIC_FEEDBACK_COLLECTION_ID! || "";
 
       // First, try to get feedback by ID
       try {
@@ -95,7 +97,7 @@ export default function ResultPage() {
           FEEDBACK_COLLECTION_ID,
           id
         );
-        
+
         const typedFeedback: Feedback = {
           $id: feedbackData.$id,
           resumeId: feedbackData.resumeId,
@@ -118,7 +120,7 @@ export default function ResultPage() {
             RESUMES_COLLECTION_ID,
             typedFeedback.resumeId
           );
-          
+
           const typedResume: Resume = {
             $id: resumeData.$id,
             userId: resumeData.userId,
@@ -136,13 +138,13 @@ export default function ResultPage() {
       } catch (feedbackError) {
         // If feedback not found by ID, try to find by resumeId
         console.log("Not found as feedback ID, trying as resume ID...");
-        
+
         const resumeData = await database.getDocument(
           DATABASE_ID,
           RESUMES_COLLECTION_ID,
           id
         );
-        
+
         const typedResume: Resume = {
           $id: resumeData.$id,
           userId: resumeData.userId,
@@ -194,20 +196,20 @@ export default function ResultPage() {
     try {
       // Clean up the Cloudinary URL and ensure it's accessible
       let cleanUrl = resumePath;
-      
+
       // If it's a Cloudinary URL, you might need to transform it
       if (resumePath.includes('cloudinary')) {
         // Remove any existing transformations and get the base URL
         const baseUrl = resumePath.split('/upload/')[0] + '/upload/';
         const publicId = resumePath.split('/upload/')[1];
-        
+
         // Create a secure URL with proper format
         cleanUrl = `${baseUrl}fl_attachment/${publicId}`;
-        
+
         // Alternative: Use the original URL but ensure it's accessible
         // cleanUrl = resumePath.replace('/upload/', '/upload/fl_attachment/');
       }
-      
+
       setPdfUrl(cleanUrl);
     } catch (err) {
       console.error("Error processing PDF URL:", err);
@@ -258,7 +260,30 @@ export default function ResultPage() {
   };
 
   const formatFeedbackText = (text: string) => {
-    return text.replace(/\*\*(.*?)\*\*:/g, '').trim();
+    // If text contains Markdown formatting, return it as-is for ReactMarkdown
+    return text;
+  };
+
+  const renderMarkdownContent = (text: string) => {
+    // Check if text contains Markdown syntax
+    const hasMarkdown = /(\*\*.*?\*\*|__.*?__|\*.*?\*|_.*?_|`.*?`|\[.*?\]\(.*?\)|^- |^#+ )/m.test(text);
+
+    if (hasMarkdown) {
+      return (
+        <div className="prose prose-sm max-w-none text-gray-600">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {text}
+          </ReactMarkdown>
+        </div>
+      );
+    } else {
+      // If no Markdown, render as plain text with proper formatting
+      return (
+        <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+          {text}
+        </p>
+      );
+    }
   };
 
   const getCategoryIcon = (category: string) => {
@@ -387,7 +412,7 @@ export default function ResultPage() {
               className="bg-white rounded-2xl shadow-lg p-6 text-center"
             >
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Overall Score</h2>
-              
+
               <div className="relative inline-block mb-4">
                 <div className={`relative w-40 h-40 rounded-full ring-8 ${getScoreRingColor(feedback.overallScore)} bg-white`}>
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -513,7 +538,7 @@ export default function ResultPage() {
               className="bg-white rounded-2xl shadow-lg p-6"
             >
               <h2 className="text-xl font-bold text-gray-800 mb-6">Detailed Analysis</h2>
-              
+
               <div className="space-y-6">
                 {feedbackCategories.map((category, index) => {
                   const IconComponent = getCategoryIcon(category.key);
@@ -533,14 +558,15 @@ export default function ResultPage() {
                           {getCategoryTitle(category.key)}
                         </h3>
                       </div>
-                      <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                        {formatFeedbackText(category.content)}
-                      </p>
+                      <div className="text-gray-600 leading-relaxed">
+                        {renderMarkdownContent(category.content)}
+                      </div>
                     </motion.div>
                   );
                 })}
               </div>
             </motion.div>
+
 
             {/* Action Buttons */}
             <motion.div
@@ -549,6 +575,22 @@ export default function ResultPage() {
               transition={{ delay: 0.8 }}
               className="flex flex-col sm:flex-row gap-4 mt-6"
             >
+              <button
+                onClick={() => router.push("/dashboard/")}
+                className="flex-1 bg-gradient-to-r from-blue-900 to-purple-500 text-white px-6 py-3 rounded-lg hover:from-blue-900 hover:to-purple-900 transition-colors font-semibold text-center"
+              >
+                Apply All Nd Create New (Coming Soon)
+              </button>
+
+            </motion.div>
+            {/* Action Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex flex-col sm:flex-row gap-4 mt-6"
+            >
+
               <button
                 onClick={() => router.push("/dashboard")}
                 className="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-center"

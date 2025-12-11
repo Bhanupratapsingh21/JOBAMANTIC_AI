@@ -257,7 +257,7 @@ Be specific and actionable.`;
 
       // Claude API call - uses messages format
       const message = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20241022", // Latest Sonnet model
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 2000,
         temperature: 0.2,
         system: "You are an expert ATS consultant. Provide structured, actionable feedback. Always include an overall score (0-100) and detailed analysis.",
@@ -288,11 +288,16 @@ Be specific and actionable.`;
     const processingTime = Date.now() - startTime;
     console.log(`⏱️ Total processing time: ${processingTime}ms`);
 
+    const truncatedText = extractedText.length > 5000
+      ? extractedText.substring(0, 4800) + "... [content truncated]"
+      : extractedText;
+
     // Return successful response
     return NextResponse.json({
       success: true,
       cloudinaryUrl,
       imageUrl,
+      truncatedText,
       feedback: structuredFeedback,
       jobTitle: jobTitle.trim(),
       textLength: extractedText.length,

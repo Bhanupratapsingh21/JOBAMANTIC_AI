@@ -47,6 +47,7 @@ interface AnalysisResponse {
   jobTitle: string;
   textLength: number;
   message: string;
+  truncatedText: string;
 }
 
 export default function UploadPage() {
@@ -138,7 +139,7 @@ export default function UploadPage() {
         throw new Error(data.message || "Analysis failed");
       }
 
-      const { cloudinaryUrl, imageUrl, feedback, textLength } = data;
+      const { cloudinaryUrl, imageUrl, feedback, truncatedText } = data;
 
       // ✅ STEP 1: Save Resume document first
       setProgress(80);
@@ -153,6 +154,7 @@ export default function UploadPage() {
           jobDescription: jobDescription.trim(),
           resumePath: cloudinaryUrl,
           imagePath: imageUrl,
+          resumetext: truncatedText
         }
       );
 
@@ -305,6 +307,7 @@ export default function UploadPage() {
                   Job Description <span className="text-red-500">*</span>
                 </Label>
                 <Textarea
+                  maxLength={5000}
                   id="jobDescription"
                   value={jobDescription}
                   onChange={e => setJobDescription(e.target.value)}
