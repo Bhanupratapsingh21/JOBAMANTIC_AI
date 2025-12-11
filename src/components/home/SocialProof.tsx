@@ -7,7 +7,7 @@ export const SocialProof = () => {
         {
             name: "Bhanu Pratap Singh",
             role: "Tech Lead Newral.in",
-            content: "After months of job searching, I tried trainingbasket's Resume Builder. Within 2 weeks, I had 5 interviews and landed my dream job with a 30% salary increase!",
+            content: "After months of job searching, I tried JOBAMANTIC Ai's Resume Builder. Within 2 weeks, I had 5 interviews and landed my dream job with a 30% salary increase!",
             avatar: "👩‍💼"
         },
         {

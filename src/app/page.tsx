@@ -378,7 +378,7 @@ export default function Page() {
                   <h1 className="text-4xl font-semibold text-black dark:text-white">
                     Job hunting made easy and fun. <br />
                     <span className="text-4xl md:text-[6rem] font-bold mt-1 leading-none">
-                      With trainingbasket.in/
+                      With JOBAMANTIC Ai.in/
                     </span>
                   </h1>
                 </>
@@ -397,7 +397,7 @@ export default function Page() {
 
 
           <div className="h-max flex items-center justify-center mt-12">
-            <TextHoverEffect text="trainingbasket.in" />
+            <TextHoverEffect text="JOBAMANTIC Ai.in" />
           </div>
         </div>
       </div>

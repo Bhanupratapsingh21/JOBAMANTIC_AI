@@ -268,7 +268,7 @@ export default function PublicResumePage() {
 
                     {/* Watermark */}
                     <div className="absolute bottom-4 right-4 text-xs text-gray-400">
-                        Created with Trainingbasket Resume Builder
+                        Created with JOBAMANTIC Ai Resume Builder
                     </div>
                 </div>
 

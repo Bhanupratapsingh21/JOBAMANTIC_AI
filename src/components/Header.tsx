@@ -244,7 +244,7 @@ export const NavbarLogo = () => {
         width={100}
         className="h-6 aspect-auto w-6"
       />
-      <span className="font-medium  text-xl text-black dark:text-white">Trainingbasket.in</span>
+      <span className="font-medium  text-xl text-black dark:text-white">JOBAMANTIC Ai</span>
     </a>
   );
 };

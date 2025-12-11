@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trainingbasket Resume Ai",
+  title: "JOBAMANTIC Ai Resume Ai",
   description: "Get Your Resume Shortlisted Land Your Dream Job Fast",
 };
 
