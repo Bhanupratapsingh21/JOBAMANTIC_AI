@@ -1,5 +1,4 @@
-"use client"
-
+// src/hooks/useResumeData.ts
 import { useState, useCallback } from "react"
 import { ResumeData, PersonalInfo, Education, Experience, Skills } from "../types/resume"
 import html2canvas from 'html2canvas'
@@ -27,14 +26,6 @@ const initialResumeData: ResumeData = {
             startDate: "Aug 2018",
             endDate: "May 2021",
             gpa: "3.8"
-        },
-        {
-            id: 2,
-            institution: "Blinn College",
-            location: "Bryan, TX",
-            degree: "Associate's in Liberal Arts",
-            startDate: "Aug 2014",
-            endDate: "May 2018"
         }
     ],
     experience: [
@@ -49,19 +40,6 @@ const initialResumeData: ResumeData = {
                 "Developed a REST API using FastAPI and PostgreSQL to store data from learning management systems",
                 "Developed a full-stack web application using Flask, React, PostgreSQL and Docker to analyze GitHub data",
                 "Explored ways to visualize GitHub collaboration in a classroom setting"
-            ]
-        },
-        {
-            id: 2,
-            company: "Southwestern University",
-            location: "Georgetown, TX",
-            position: "Information Technology Support Specialist",
-            startDate: "Sep 2018",
-            endDate: "Present",
-            description: [
-                "Communicate with managers to set up campus computers used on campus",
-                "Assess and troubleshoot computer problems brought by students, faculty and staff",
-                "Maintain upkeep of computers, classroom equipment, and 200 printers across campus"
             ]
         }
     ],
@@ -85,11 +63,28 @@ const initialResumeData: ResumeData = {
         frameworks: ["React", "Node.js", "Flask", "JUnit", "WordPress", "Material-UI", "FastAPI"],
         tools: ["Git", "Docker", "TravisCI", "Google Cloud Platform", "VS Code", "Visual Studio", "PyCharm"],
         libraries: ["pandas", "NumPy", "Matplotlib"]
-    }
+    },
+    template: "modern" // Add this
 }
 
-export const useResumeData = () => {
-    const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData)
+export const useResumeData = (initialData?: ResumeData) => {
+    const [resumeData, setResumeData] = useState<ResumeData>(initialData || initialResumeData)
+
+    // Reset function to load new data
+    const resetResumeData = useCallback((newData: ResumeData) => {
+        setResumeData(newData)
+    }, [])
+
+    const clearSection = useCallback((section: keyof ResumeData) => {
+        setResumeData(prev => ({
+            ...prev,
+            [section]: []
+        }));
+    }, []);
+
+    const setResumeDataDirectly = useCallback((newData: ResumeData) => {
+        setResumeData(newData);
+    }, []);
 
     const handleInputChange = useCallback((section: keyof ResumeData, field: string, value: string) => {
         setResumeData(prev => ({
@@ -290,7 +285,10 @@ export const useResumeData = () => {
             handleSkillsChange,
             addSkill,
             removeSkill,
-            downloadPDF
+            downloadPDF,
+            clearSection,
+            setResumeDataDirectly,
+            resetResumeData
         }
     }
 }

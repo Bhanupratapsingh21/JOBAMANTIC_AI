@@ -354,7 +354,7 @@ export default function DashboardPage() {
                             className="border-blue-200 text-blue-700 hover:bg-blue-50"
                         >
                             <BarChart3 className="w-4 h-4 mr-2" />
-                           Smart Resume Analyzer.
+                            Smart Resume Analyzer.
                         </Button>
                         <Button
                             onClick={() => router.push("/resume/create")}
@@ -451,7 +451,7 @@ export default function DashboardPage() {
                                                 date={resume.$createdAt}
                                                 badge={resume.template}
                                                 onView={() => router.push(`/resume/${resume.shareableUrl}`)}
-                                                onEdit={() => router.push(`/resume/create?edit=${resume.$id}`)}
+                                                onEdit={() => router.push(`/resume/builder/${resume.$id}`)}
                                                 isPublic={resume.isPublic}
                                             />
                                         ))

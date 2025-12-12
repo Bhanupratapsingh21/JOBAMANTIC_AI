@@ -21,7 +21,8 @@ import {
   AlertCircle,
   Lightbulb,
   Download,
-  Eye
+  Eye,
+  Sparkles
 } from "lucide-react";
 
 interface Feedback {
@@ -576,10 +577,11 @@ export default function ResultPage() {
               className="flex flex-col sm:flex-row gap-4 mt-6"
             >
               <button
-                onClick={() => router.push("/dashboard/")}
-                className="flex-1 bg-gradient-to-r from-blue-900 to-purple-500 text-white px-6 py-3 rounded-lg hover:from-blue-900 hover:to-purple-900 transition-colors font-semibold text-center"
+                onClick={() => router.push(`/dashboard/apply-changes/${resume?.$id}`)}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-semibold text-center flex items-center justify-center gap-2"
               >
-                Apply All Nd Create New (Coming Soon)
+                <Sparkles className="w-5 h-5" />
+                Apply All Changes
               </button>
 
             </motion.div>
