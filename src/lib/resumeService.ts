@@ -3,6 +3,7 @@ import { ID, Query, type Models } from 'appwrite';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 const RESUMES_COLLECTION_ID = process.env.NEXT_PUBLIC_CREATED_RESUME_COLLECTION_ID!;
+const SELECTED_RESUME_COLLECTION_ID = process.env.NEXT_PUBLIC_SELECTED_RESUME_COLLECTION_ID;
 
 export interface ResumeData {
   personalInfo: {
@@ -56,7 +57,7 @@ export interface ResumeData {
 interface ResumeDocument extends Models.Document {
   userId: string;
   title: string;
-  resumeData: string; // Stored as JSON string
+  resumeData: string | ResumeData; // Stored as JSON string (or object in legacy docs)
   template: string;
   isPublic: boolean;
   shareableUrl?: string;
@@ -75,12 +76,89 @@ export interface SavedResume {
   $updatedAt: string;
 }
 
+const emptyResumeData: ResumeData = {
+  personalInfo: {
+    fullName: "Unknown",
+    headline: "",
+    email: "",
+    phone: "",
+    location: "",
+    website: "",
+    linkedin: "",
+    github: ""
+  },
+  summary: "",
+  education: [],
+  experience: [],
+  projects: [],
+  skills: {
+    languages: [],
+    frameworks: [],
+    tools: [],
+    libraries: []
+  },
+  template: ""
+};
+
+const parseResumeData = (raw: unknown, docId: string): ResumeData => {
+  if (!raw) return emptyResumeData;
+
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as ResumeData;
+    } catch (error) {
+      console.warn("Invalid resumeData JSON for document:", docId, error);
+      return emptyResumeData;
+    }
+  }
+
+  if (typeof raw === "object") {
+    return raw as ResumeData;
+  }
+
+  return emptyResumeData;
+};
+
+const serializeResumeData = (data: ResumeData | string | undefined): string => {
+  if (!data) {
+    return JSON.stringify(emptyResumeData);
+  }
+
+  if (typeof data === "string") {
+    return data;
+  }
+
+  try {
+    return JSON.stringify(data);
+  } catch (error) {
+    console.warn("Failed to stringify resume data:", error);
+    return JSON.stringify(emptyResumeData);
+  }
+};
+
+const syncSelectedResume = async (doc: ResumeDocument): Promise<void> => {
+  if (!SELECTED_RESUME_COLLECTION_ID) return;
+
+  try {
+    await database.updateDocument(
+      DATABASE_ID,
+      SELECTED_RESUME_COLLECTION_ID,
+      doc.$id,
+      {
+        resumeData: serializeResumeData(doc.resumeData)
+      }
+    );
+  } catch (error) {
+    console.warn("Failed to sync selected resume:", error);
+  }
+};
+
 // Helper function to convert Appwrite document to SavedResume
 const documentToResume = (doc: ResumeDocument): SavedResume => ({
   $id: doc.$id,
   userId: doc.userId,
   title: doc.title,
-  resumeData: JSON.parse(doc.resumeData),
+  resumeData: parseResumeData(doc.resumeData as unknown, doc.$id),
   template: doc.template,
   isPublic: doc.isPublic,
   shareableUrl: doc.shareableUrl,
@@ -201,6 +279,8 @@ export const resumeService = {
         resumeId,
         updateData
       ) as ResumeDocument;
+
+      await syncSelectedResume(updated);
 
       return documentToResume(updated);
     } catch (error) {

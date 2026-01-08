@@ -65,8 +65,18 @@ export const ModernTemplate = ({ data }: TemplateProps) => {
               <div key={i} className="mb-4">
                 <div className="flex justify-between items-start">
                   <h3 className="font-semibold text-gray-900 text-base">{proj.name}</h3>
+                  <span className="text-sm text-gray-500 whitespace-nowrap">
+                    {proj.startDate} – {proj.endDate}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-700">{proj.description}</p>
+                {proj.technologies && (
+                  <p className="text-sm text-gray-600 mb-2">Tech: {proj.technologies}</p>
+                )}
+                <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                  {proj.description.map((desc, descIndex) => (
+                    <li key={descIndex}>{desc}</li>
+                  ))}
+                </ul>
               </div>
             ))}
           </Section>

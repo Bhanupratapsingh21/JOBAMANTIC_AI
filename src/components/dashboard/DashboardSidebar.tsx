@@ -9,7 +9,8 @@ import {
     LogOut,
     X,
     Plus,
-    BarChart3
+    BarChart3,
+    ListChecks
 } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }: Dashbo
         { id: "resumes", label: "My Resumes", icon: FileText, color: "from-blue-500 to-cyan-500", path: "/dashboard/resumes" },
         { id: "create", label: "Create New", icon: Plus, color: "from-green-500 to-teal-500", path: "/resume/create" },
         { id: "templates", label: "Templates", icon: Star, color: "from-orange-500 to-red-500", path: "/dashboard/templates" },
+        { id: "autofill", label: "Autofill Select", icon: ListChecks, color: "from-amber-500 to-orange-500", path: "/dashboard/autofill" },
         { id: "analyze", label: "Smart Analyzer", icon: BarChart3, color: "from-indigo-500 to-purple-500", path: "/dashboard/upload" },
     ];
 
