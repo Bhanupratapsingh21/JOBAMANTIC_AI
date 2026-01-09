@@ -1,56 +1,9 @@
 import { database } from './appwrite';
 import { ID, Query, type Models } from 'appwrite';
+import { ResumeData } from '../types/resume';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 const RESUMES_COLLECTION_ID = process.env.NEXT_PUBLIC_CREATED_RESUME_COLLECTION_ID!;
-
-export interface ResumeData {
-  personalInfo: {
-    fullName: string;
-    headline: string;
-    email: string;
-    phone: string;
-    location: string;
-    website?: string;
-    linkedin: string;
-    github: string;
-  };
-  summary: string;
-  education: Array<{
-    id: number;
-    institution: string;
-    location: string;
-    degree: string;
-    minor?: string;
-    startDate: string;
-    endDate: string;
-    gpa?: string;
-  }>;
-  experience: Array<{
-    id: number;
-    company: string;
-    location: string;
-    position: string;
-    startDate: string;
-    endDate: string;
-    description: string[];
-  }>;
-  projects: Array<{
-    id: number;
-    name: string;
-    technologies: string;
-    startDate: string;
-    endDate: string;
-    description: string[];
-  }>;
-  skills: {
-    languages: string[];
-    frameworks: string[];
-    tools: string[];
-    libraries: string[];
-  };
-  template: string;
-}
 
 // Appwrite Document interface that includes all default fields
 interface ResumeDocument extends Models.Document {
@@ -172,7 +125,7 @@ export const resumeService = {
     }
   },
 
-  // Update resume
+  // Update resume - FIXED VERSION
   async updateResume(
     resumeId: string,
     updates: Partial<{
@@ -188,11 +141,32 @@ export const resumeService = {
         updateData.resumeData = JSON.stringify(updates.resumeData);
       }
 
-      // Generate new shareable URL if making public
-      if (updates.isPublic === true) {
-        updateData.shareableUrl = ID.unique();
-      } else if (updates.isPublic === false) {
-        updateData.shareableUrl = undefined;
+      // Get current resume to check existing shareableUrl
+      let currentResume: SavedResume;
+      try {
+        currentResume = await this.getResume(resumeId);
+      } catch (error) {
+        console.error('Error fetching current resume:', error);
+        throw new Error('Cannot update: Resume not found');
+      }
+
+      // Handle public/private status intelligently
+      if (updates.isPublic !== undefined) {
+        if (updates.isPublic === true) {
+          // Only generate new shareableUrl if it doesn't already have one
+          if (!currentResume.shareableUrl) {
+            updateData.shareableUrl = ID.unique();
+          } else {
+            // Keep existing shareableUrl
+            updateData.shareableUrl = currentResume.shareableUrl;
+          }
+        } else if (updates.isPublic === false) {
+          // When making private, remove shareableUrl
+          updateData.shareableUrl = undefined;
+        }
+      } else {
+        // If isPublic is not being updated, keep existing shareableUrl
+        updateData.shareableUrl = currentResume.shareableUrl;
       }
 
       const updated = await database.updateDocument(
@@ -223,12 +197,17 @@ export const resumeService = {
     }
   },
 
-  // Toggle resume visibility
+  // Toggle resume visibility - Also needs fixing
   async toggleResumeVisibility(resumeId: string, isPublic: boolean): Promise<SavedResume> {
     try {
+      // Get current resume first
+      const currentResume = await this.getResume(resumeId);
+      
       const updateData: any = { 
         isPublic,
-        shareableUrl: isPublic ? ID.unique() : undefined
+        shareableUrl: isPublic 
+          ? (currentResume.shareableUrl || ID.unique()) // Use existing or create new
+          : undefined // Remove when making private
       };
 
       const updated = await database.updateDocument(
@@ -252,6 +231,33 @@ export const resumeService = {
       return resume.userId === userId;
     } catch (error) {
       return false;
+    }
+  },
+
+  // New helper: Regenerate shareable URL (if needed)
+  async regenerateShareableUrl(resumeId: string): Promise<SavedResume> {
+    try {
+      const currentResume = await this.getResume(resumeId);
+      
+      if (!currentResume.isPublic) {
+        throw new Error('Cannot regenerate URL for private resume');
+      }
+
+      const updateData = {
+        shareableUrl: ID.unique()
+      };
+
+      const updated = await database.updateDocument(
+        DATABASE_ID,
+        RESUMES_COLLECTION_ID,
+        resumeId,
+        updateData
+      ) as ResumeDocument;
+
+      return documentToResume(updated);
+    } catch (error) {
+      console.error('Error regenerating shareable URL:', error);
+      throw new Error('Failed to regenerate URL');
     }
   }
 };

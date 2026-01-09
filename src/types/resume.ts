@@ -1,3 +1,4 @@
+// src/types/resume.ts
 export interface PersonalInfo {
     fullName: string;
     headline: string;
@@ -53,6 +54,7 @@ export interface ResumeData {
     experience: Experience[];
     projects: Project[];
     skills: Skills;
+    template: string; // Add this field
 }
 
 // Template names as union type for type safety
