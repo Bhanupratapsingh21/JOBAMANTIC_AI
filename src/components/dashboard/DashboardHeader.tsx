@@ -20,6 +20,7 @@ export default function DashboardHeader({
         { id: "resumes", label: "My Resumes" },
         { id: "create", label: "Create New" },
         { id: "templates", label: "Templates" },
+        { id: "autofill", label: "Autofill Select" },
         { id: "analyze", label: "Smart Analyzer." },
         { id: "profile", label: "Profile" },
         { id: "settings", label: "Settings" },

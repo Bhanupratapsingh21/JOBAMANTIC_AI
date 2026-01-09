@@ -68,7 +68,7 @@ export const ExecutiveTemplate = ({ data }: TemplateProps) => {
                 </p>
               )}
             </div>
-          ))}
+            ))}
         </Section>
 
         {/* Experience */}
@@ -91,6 +91,37 @@ export const ExecutiveTemplate = ({ data }: TemplateProps) => {
               </div>
               <ul className="list-none space-y-1.5 mt-2">
                 {exp.description.map((desc, descIndex) => (
+                  <li key={descIndex} className="text-sm text-gray-700 flex">
+                    <span className="text-blue-600 mr-2">•</span>
+                    <span>{desc}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </Section>
+
+        {/* Projects */}
+        <Section title="Projects">
+          {data.projects.map((proj, index) => (
+            <div key={index} className="mb-5 last:mb-0">
+              <div className="flex justify-between items-start mb-1">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 text-base">
+                    {proj.name}
+                  </h3>
+                  {proj.technologies && (
+                    <p className="text-sm text-gray-700 font-medium">
+                      Tech: {proj.technologies}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right text-sm text-gray-600 whitespace-nowrap ml-4">
+                  <div>{proj.startDate} – {proj.endDate}</div>
+                </div>
+              </div>
+              <ul className="list-none space-y-1.5 mt-2">
+                {proj.description.map((desc, descIndex) => (
                   <li key={descIndex} className="text-sm text-gray-700 flex">
                     <span className="text-blue-600 mr-2">•</span>
                     <span>{desc}</span>

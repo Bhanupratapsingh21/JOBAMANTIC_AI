@@ -99,6 +99,32 @@ export const JakeTemplate = ({ data }: TemplateProps) => {
         </div>
       </Section>
 
+      {/* Projects */}
+      <Section title="Projects">
+        <div className="space-y-4">
+          {data.projects.map((proj, index) => (
+            <div key={index} className="pb-1 border-b border-gray-100 last:border-none">
+              <div className="flex justify-between items-start mb-1">
+                <div>
+                  <h3 className="font-bold text-gray-900">{proj.name}</h3>
+                  {proj.technologies && (
+                    <p className="text-sm italic text-gray-700">Tech: {proj.technologies}</p>
+                  )}
+                </div>
+                <span className="text-sm text-gray-600 whitespace-nowrap">
+                  {proj.startDate} — {proj.endDate}
+                </span>
+              </div>
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {proj.description.map((desc, descIndex) => (
+                  <li key={descIndex}>{desc}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       {/* Skills */}
       <Section title="Technical Skills">
         <div className="text-sm text-gray-700 space-y-1">

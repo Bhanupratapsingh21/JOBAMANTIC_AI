@@ -8,6 +8,7 @@ import Header from "./Resume_Section/Header"
 import { PersonalInfoForm } from "./PersonalInfoForm"
 import { EducationForm } from "./EducationForm"
 import { ExperienceForm } from "./ExperienceForm"
+import { ProjectsForm } from "./ProjectsForm"
 import { SkillsForm } from "./SkillsForm"
 import { TemplatePanel } from "./TemplatePanel"
 import { PreviewPanel } from "./PreviewPanel"
@@ -259,6 +260,16 @@ export default function ResumeBuilder() {
 
           <ExperienceForm
             experience={resumeData.experience}
+            onAdd={handlers.addItem}
+            onRemove={handlers.removeItem}
+            onChange={handlers.handleArrayChange}
+            onDescriptionChange={handlers.handleNestedArrayChange}
+            onAddDescription={handlers.addDescription}
+            onRemoveDescription={handlers.removeDescription}
+          />
+
+          <ProjectsForm
+            projects={resumeData.projects}
             onAdd={handlers.addItem}
             onRemove={handlers.removeItem}
             onChange={handlers.handleArrayChange}
